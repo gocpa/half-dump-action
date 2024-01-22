@@ -94,6 +94,8 @@ function log () {
   # shellcheck disable=SC2034
   local color_warning=$YELLOW
   # shellcheck disable=SC2034
+  local color_error=$RED
+  # shellcheck disable=SC2034
   local color_alert=$RED
   # shellcheck disable=SC2034
   local color_emergency="\\x1b[1;4;5;37;41m"
