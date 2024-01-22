@@ -286,3 +286,5 @@ echo ""
 
 [[ ! -z "${DATABASE_FROM-}" ]] && export_dump
 [[ ! -z "${DATABASE_TO-}" ]] && import_dump
+
+exit 0
