@@ -44,7 +44,7 @@ Usage:
   --tables-skip "job_batches jobs failed_jobs health_check_result_history_items password_reset_tokens personal_access_tokens queue_monitor pulse_aggregates pulse_entries pulse_values telescope_entries telescope_entries_tags telescope_monitoring" \\
   --tables-bydate "pixel_log" \\
   --dump-ago 7 \\
-  --maxsize 5120000
+  --maxsize 5242880
 
 Script description here.
 
@@ -58,7 +58,7 @@ Available options:
 --tables-skip "table1 table2"  Tables to skip, space separated
 --tables-bydate "log users"    Tables to dump latest data, space separated
 --dump-ago 7                   Days to dump, default 7
---maxsize 5120000              Size in bytes, which can be dumped without warning, default 5120000
+--maxsize 5242880              Size in bytes, which can be dumped without warning, default 5242880
 EOF
   exit
 }
@@ -141,7 +141,7 @@ parse_params() {
   TABLES_SKIP=''
   TABLES_DUMP_BYDATE=''
   DUMP_AGO=7
-  MAXSIZE=5120000
+  MAXSIZE=5242880
 
   while :; do
     case "${1-}" in
