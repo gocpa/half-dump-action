@@ -15,7 +15,8 @@
 # 
 # .sqlpwd content:
 # [client]
-# host=
+# host=127.0.0.1
+# port=3306
 # user=
 # password=
 #
@@ -43,7 +44,7 @@ Usage:
   --tables-skip "job_batches jobs failed_jobs health_check_result_history_items password_reset_tokens personal_access_tokens queue_monitor pulse_aggregates pulse_entries pulse_values telescope_entries telescope_entries_tags telescope_monitoring" \\
   --tables-bydate "pixel_log" \\
   --dump-ago 7 \\
-  --maxsize 5000000
+  --maxsize 5120000
 
 Script description here.
 
@@ -57,7 +58,7 @@ Available options:
 --tables-skip "table1 table2"  Tables to skip, space separated
 --tables-bydate "log users"    Tables to dump latest data, space separated
 --dump-ago 7                   Days to dump, default 7
---maxsize 5000000              Size in bytes, which can be dumped without warning, default 5000000
+--maxsize 5120000              Size in bytes, which can be dumped without warning, default 5120000
 EOF
   exit
 }
@@ -140,7 +141,7 @@ parse_params() {
   TABLES_SKIP=''
   TABLES_DUMP_BYDATE=''
   DUMP_AGO=7
-  MAXSIZE=5000000
+  MAXSIZE=5120000
 
   while :; do
     case "${1-}" in
@@ -243,17 +244,39 @@ export_dump() {
     if [ $TABLE_SIZE -gt $MAXSIZE ]; then
         warning "${YELLOW}Warning: ${TABLENAME} size is too big: ${RED}`echo $TABLE_SIZE | numfmt --to=iec-i --suffix=B`${NOFORMAT}"
     fi
-    
+
     # Remember table size for next iteration
     PREVIOUS_FILE_INFO=$(wc -c "$DUMPFILE" | awk '{print $1}')
 
   done
 
+  if [ -f "${DUMPFILE}.gz" ]; then
+    echo ""
+    info "Deleting old .gz file ${DUMPFILE}.gz"
+    rm "${DUMPFILE}.gz"
+    info "${GREEN}Result: [OK]${NOFORMAT}"
+  fi
+
   echo ""
-  info "${GREEN}Done!${NOFORMAT}"
+  info "Gzipping file ${DUMPFILE} to ${DUMPFILE}.gz"
+  gzip $DUMPFILE
+  info "${GREEN}Result: [OK]${NOFORMAT}"
+
+  echo ""
+  info "${GREEN}Sucessfully exported!${NOFORMAT}"
 }
 
 import_dump() {
+  echo ""
+
+  if [ ! -f "${DUMPFILE}.gz" ]; then
+    die "Dump file ${DUMPFILE}.gz doesn't exist"
+  fi
+
+  info "Gunzipping file ${DUMPFILE}.gz to ${DUMPFILE}"
+  gunzip --keep "${DUMPFILE}.gz"
+  info "${GREEN}Result: [OK]${NOFORMAT}"
+  
   echo ""
 
   info "Deleting all old tables from ${BOLD}${DATABASE_TO}${NOFORMAT}:"
@@ -263,9 +286,19 @@ import_dump() {
   echo ""
 
   info "Importing dump to ${BOLD}${DATABASE_TO}${NOFORMAT}:"
-  cat $DUMPFILE | mysql --defaults-extra-file=.sqlpwd $DATABASE_TO
-  info "${GREEN}Result: [OK]${NOFORMAT}"
+  if hash pv 2>/dev/null; then
+    pv $DUMPFILE | mysql --defaults-extra-file=.sqlpwd $DATABASE_TO
+    info "${GREEN}Result: [OK]${NOFORMAT}"
+  else
+    cat $DUMPFILE | mysql --defaults-extra-file=.sqlpwd $DATABASE_TO
+    info "${GREEN}Result: [OK]${NOFORMAT}"
+  fi
+  echo ""
   
+  info "Deleting old unpackked file ${DUMPFILE}"
+  rm "${DUMPFILE}"
+  info "${GREEN}Result: [OK]${NOFORMAT}"
+
   echo ""
   info "${GREEN}Done!${NOFORMAT}"
 }
@@ -282,6 +315,11 @@ info "${YELLOW}* TABLES_SKIP:${NOFORMAT}        ${TABLES_SKIP}"
 info "${YELLOW}* TABLES_DUMP_BYDATE:${NOFORMAT} ${TABLES_DUMP_BYDATE}"
 info "${YELLOW}* DUMP_AGO:${NOFORMAT}           ${DUMP_AGO}"
 info "${YELLOW}* MAXSIZE:${NOFORMAT}            `echo $MAXSIZE | numfmt --to=iec-i --suffix=B`"
+
+if [ ! -f ".sqlpwd" ]; then
+  die "Error! .sqlpwd not exists"
+fi
+
 echo ""
 
 [[ ! -z "${DATABASE_FROM-}" ]] && export_dump

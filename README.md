@@ -43,7 +43,7 @@ Run the script with the following command, replacing <options> with your specifi
 * `--tables-skip "table1 table2"` Tables to skip (space-separated).
 * `--tables-bydate "table3 table4"` Tables for which to dump recent data (space-separated).
 * `--dump-ago 7` Number of days to include in the dump (default: 7).
-* `--maxsize 5000000` Size in bytes, which can be dumped without warning, (default 5000000).
+* `--maxsize 5120000` Size in bytes, which can be dumped without warning, (default 5120000).
 
 ## Additional Notes
 Ensure that the .sqlpwd file is properly secured and contains the correct database credentials.
